@@ -1,103 +1,47 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 public class PlayerControls : MonoBehaviour
 {
-    #region Relevant Concepts
-    /*
-    - Variable - A storage container for data.
-    - Function - A block of reuseable code that performs a specific task.
-    - If Statements
-    - Data Types
-        - float
-        - int
-        - bool
-        - string
-    - Declaration of variables in C#
-        - [Access Modifier] [Data Type] [Variable Name];
-    - Assignment of variables in C#endregion    
-        - [Variable Name] = [Value];
-    - GetComponent<>();
-    - Input.GetAxis("");
-    - Quaternion.LookRotation()
-    - Quaternion.Slerp()
-    - transform.rotation
-    - CharacterController
-    - Start()
-    - Update()
-    - Vector3
-    - Argument/Parameter
-    - Indentation
-    */
-    #endregion
-
     #region Variables
-    // 1. Declare a public variable of type float named 'moveSpeed'; assign it the value '5f'
-    // This variable stores how fast the player character moves
-    // YOUR CODE HERE
-
-    // 2. Declare a public variable of type CharacterController named 'controller'; Do not assign it a value here
-    // This variable stores the player character's Charactercontroller component, which will be used to move the character later
-    // YOUR CODE HERE
-
-    // 3. Declare a public variable of type float named 'rotateSpeed'; assign it the value '10f'
-    // This variable stores how fast the player rotates when changing direction
-    // YOUR CODE HERE
+    public float movementSpeed = 5f; // Variable to control how fast the player moves
+    public float jumpForce = 10f; // The force with which the player jumps
+    public float gravity = 20f; // The force of gravity affecting the player
+    public CharacterController controller; // Empty reference to the CharacterController component on the player
+    private Vector3 moveDirection = Vector3.zero; // A vector (x, y, z) to dictate the direction the player moves in
+    public float rotationSpeed = 10f; // Speed at which the player rotates to face the movement direction
     #endregion
-
-
-    // Start() is a built-in Unity function/method called before the first frame update of the game
+    // Start is called before the first frame update
     void Start()
     {
-        // 4. Store/Assign the player's CharacterController component to the 'controller' variable (Hint: Use the GetComponent<>() funcntion)
-        // This allows us to access the player character's CharacterController component through this variable, and call functions it has like Move() 
-        // YOUR CODE HERE
+        controller = GetComponent<CharacterController>(); // Get the CharacterController component attached to the player
     }
-
-    // Update is a built-in Unity function/method called every frame of your game (there is on average 60 frames per second)
-    void Update()
+    void FixedUpdate()
     {
-        // 5. Declare a private variable of type float named 'horizontalInput'
-        // Assign this variable the output of the Input.GetAxis("") function 
-        // This line of code collects the horizontal input (left & right) of the player & stores it inside the 'horizontalInput' variable
-        // YOUR CODE HERE
-
-        // 6. Declare a private variable of type float named 'vertricalInput'
-        // Assign this variable the output of the Input.GetAxis("") function 
-        // This line of code collects the vertical input (forward & back) of the player & stores it inside the 'verticalInput' variable
-        // YOUR CODE HERE
-
-        // 7. Declare a private variable of type Vector3 named 'moveDirection'
-        // Assign this variable to a new Vector3(x, y, z) by plugging in your input variables for the x & z values respectively, and the y value as '0f'
-        // This variable compiles all player input into a single direction the player character will move in
-        // YOUR CODE HERE
-
-
-        // 8. Write an if statement with the condtion: if 'moveDirection' is NOT equal to 'Vector3.zero'
-        // This checks 'if the player's move direction is not zero', and is therefore supposed to be moving 
-        // (Hint: Don't forget to create {} brackets after the head of the if statement; 9 - 11 should be inside and indented within those brackets)
-        // (HINT: The "does not equal" operator is !=) 
-        // YOUR CODE HERE
-        
-            // 9. Declare a variable of type Quaternion named 'targetRotation'
-            // Assign this variable the output of the function Quaternion.LookRotation(""), with the 'moveDirection' as the argument
-            // This variable stores the desired direction we want the player character to turn towwards while moving
-            // YOUR CODE HERE
-
-            // 10. Assign the player character's transform.rotation value to the output of the Quaternion.Slerp() function;
-            // Pass in 'transform.rotation', 'targetRotation', 'rotationSpeed * Time.deltaTime' as the arguments
-            // This line of code rotates the player character over time until it is facing the direction it is traveling in
-            // YOUR CODE HERE
-
-            // 11. Access the 'controller' variable & call it's Move() function
-            // Pass in 'moveDirection * moveSpeed * Time.deltaTime' as the arguments
-            // This line of code applies our movement calculations and move speed to the player character to actually make them move!
-            // YOUR CODE HERE
+        float horizontalInput = Input.GetAxis("Horizontal"); // Stores the Horizontal (Left & Right) input of the player
+        float verticalInput = Input.GetAxis("Vertical"); // Stores the Vertical (Forward & Backward) input of the player
+        Vector3 movement = new Vector3(horizontalInput, 0f, verticalInput); // Calculate the direction the player should move based on the input
+        //movement = transform.TransformDirection(movement); // Convert the direction into local space
+        movement *= movementSpeed;
+        if (controller.isGrounded) // If the player is on the ground...
+        {
+            moveDirection = movement; // Apply the movement vector to the player
+            if (Input.GetButton("Jump")) // If the player presses the jump button...
+            {
+                moveDirection.y = jumpForce; // Apply the jumpforce into vertical movement for the player
+                AudioManager.Instance.PlaySound("Player Jump"); // Tell the Audio Manager to play the jump SFX when the player jumps
+            }
+        }
+        else // Meaning the player is NOT grounded and therefore in the air...
+        {
+            moveDirection.y -= gravity * Time.deltaTime; // Apply gravity to the player if they are not on the ground
+        }
+        // Rotate the player to face the direction of movement
+        if (movement != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(movement);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        }
+        controller.Move(moveDirection * Time.deltaTime); // Move the player with the characterController component
     }
-
-    // 12. Return to the Unity Editor
-    // Enter play mode and test your code; your player character should now be able to move around!
 }
-
-
